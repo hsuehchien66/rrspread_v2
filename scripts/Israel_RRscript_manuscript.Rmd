@@ -1,0 +1,1102 @@
+---
+title: "Israel_RRscript_manuscript"
+author: "Raymond Cheng"
+date: "22/09/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**This is the markdown file for generate results for Israel relative risk of spread manuscript**
+
+### Load libraries
+
+```{r}
+library(ape)
+library(BactDating)
+library(dplyr)
+library(geosphere)
+library(ggplot2)
+library(data.table)
+library(cowplot)
+library(rrspread)
+```
+
+### Load metadata
+
+check [github](https://github.com/hsuehchien66/rrspread) for metadata format
+
+```{r}
+metadata_file_path = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/Israel_GPSC_city_region.csv"
+metadata = read.csv(metadata_file_path)
+### generate lane_id files for all 1,174 isolates
+lane_id_1174 = metadata[,"lane_id"]
+write.table(lane_id_1174, "Israel_1174_isolates_laneid.txt", row.names = F, col.names = F, quote = F)
+## fixed metadata REGION information
+noregion <- metadata[which(metadata$REGION==""),]
+metadata[c(202,308), "REGION"] = "South District"
+metadata[c(356,413,692,908), "REGION"] = "Jerusalem District"
+metadata[c(382,383,418,570,609, 435, 694, 929), "REGION"] = "Center District"
+metadata[613, "REGION"] = "Tel Aviv District"
+region_count <- as.data.frame(table(metadata$REGION))
+colnames(region_count) <- c("District", "Count")
+write.table(region_count, file = "Israel_region_count.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+```
+
+### Load gubbins tree
+
+The tree should be recombination-corrected by Gubbins GPSC6,8,10,47,55 are selected for Israel migration analysis
+
+```{r}
+gpsc8_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC8_reference_bwa.final_tree.tre"
+  gpsc8_gubbin_tree = read.tree(gpsc8_gubbin_tree_path)
+
+gpsc55_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC55_reference_bwa.final_tree.tre"
+  gpsc55_gubbin_tree = read.tree(gpsc55_gubbin_tree_path)
+
+gpsc47_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC47_reference_bwa.final_tree.tre"
+  gpsc47_gubbin_tree = read.tree(gpsc47_gubbin_tree_path)
+
+gpsc6_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC6_reference_bwa.final_tree.tre"
+  gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
+
+gpsc10_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC10_reference_bwa.final_tree.tre"
+  gpsc10_gubbin_tree = read.tree(gpsc10_gubbin_tree_path)
+```
+
+### Run bactdating
+
+**Input:** 1. Gubbins (recombination-corrected tree), 2. metadata with collection time **Output:** 1. bactdating results 2. root-to-tip distance vs. collection time **notes:** *drop_tip= TRUE* to make sure reference genome is not included in the analysis, *branch_model* can be assigned for evolutionary rates of branches, *n_it* to assign number of iterations in the MCMC process
+
+```{r}
+gpsc8_gubbin_tree_plot = plt_gubbin_tree(gpsc8_gubbin_tree)
+gpsc8_time_tree_list = match_tree_meta(metadata, gpsc8_gubbin_tree, "GPSC8_reference", drop_tip = TRUE)
+gpsc8_bd_res = time_resolved(gpsc8_time_tree_list$match_tree_meta, gpsc8_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC8", time="Year_collection", n_it = 3000, branch_model="mixedgamma")
+
+gpsc55_gubbin_tree_plot = plt_gubbin_tree(gpsc55_gubbin_tree)
+gpsc55_time_tree_list = match_tree_meta(metadata, gpsc55_gubbin_tree, "GPSC55_reference", drop_tip = TRUE)
+gpsc55_bd_res = time_resolved(gpsc55_time_tree_list$match_tree_meta, gpsc55_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC55", n_it = 3000, branch_model="mixedgamma")
+
+gpsc47_gubbin_tree_plot = plt_gubbin_tree(gpsc47_gubbin_tree)
+gpsc47_time_tree_list = match_tree_meta(metadata, gpsc47_gubbin_tree, "GPSC47_reference", drop_tip = TRUE)
+gpsc47_bd_res = time_resolved(gpsc47_time_tree_list$match_tree_meta, gpsc47_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC47", n_it = 3000, branch_model="mixedgamma")
+
+gpsc6_gubbin_tree_plot = plt_gubbin_tree(gpsc6_gubbin_tree)
+gpsc6_time_tree_list = match_tree_meta(metadata, gpsc6_gubbin_tree, "GPSC6_reference", drop_tip = TRUE)
+gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC6", n_it = 3000, branch_model="mixedgamma")
+
+gpsc10_gubbin_tree_plot = plt_gubbin_tree(gpsc10_gubbin_tree)
+gpsc10_time_tree_list = match_tree_meta(metadata, gpsc10_gubbin_tree, "GPSC10_reference", drop_tip = TRUE)
+gpsc10_bd_res = time_resolved(gpsc10_time_tree_list$match_tree_meta, gpsc10_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC10", n_it = 3000, branch_model="mixedgamma")
+
+### or Load previous bactdating results
+load(file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bdtree_mixgamma.RData")
+```
+
+#### Checked convergence of MCMC
+
+**notes:** 3 parameters (mu, sigma, alpha) should get converged and have enough sample size throughout MCMC. Each parameter should have sample size \> 100
+
+```{r}
+mcmc_gpsc6=as.mcmc.resBactDating(gpsc6_bd_res$BactDating) #check whether converge
+coda::effectiveSize(mcmc_gpsc6)
+mcmc_gpsc8=as.mcmc.resBactDating(gpsc8_bd_res$BactDating) #check whether converge
+coda::effectiveSize(mcmc_gpsc8)
+mcmc_gpsc10=as.mcmc.resBactDating(gpsc10_bd_res$BactDating) #check whether converge
+coda::effectiveSize(mcmc_gpsc10)
+mcmc_gpsc47=as.mcmc.resBactDating(gpsc47_bd_res$BactDating) #check whether converge
+coda::effectiveSize(mcmc_gpsc47)
+mcmc_gpsc55=as.mcmc.resBactDating(gpsc55_bd_res$BactDating) #check whether converge
+coda::effectiveSize(mcmc_gpsc55)
+```
+
+### Bind trees and combine trees with metadata
+
+match the laneid in the tips of the trees and the laneid in the metadata
+
+```{r}
+gpsc08_bd_tree = gpsc8_bd_res$BactDating$tree
+gpsc55_bd_tree = gpsc55_bd_res$BactDating$tree
+gpsc47_bd_tree = gpsc47_bd_res$BactDating$tree
+gpsc06_bd_tree = gpsc6_bd_res$BactDating$tree
+gpsc10_bd_tree = gpsc10_bd_res$BactDating$tree
+
+
+multitrees = bind_multitree(gpsc08_bd_tree, gpsc55_bd_tree, gpsc47_bd_tree, gpsc06_bd_tree, gpsc10_bd_tree)
+plot(multitrees, cex=0.3, no.margin = TRUE)
+write.tree(multitrees, file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/GPSC8_55_47_6_10_Israel.nwk")
+lanes <- multitrees$tip.label
+
+## subset only those present in the trees
+####metadata = read.csv(metadata_file)
+selected_gpsc_metadata = subset(metadata, metadata$lane_id %in% lanes)
+lanes_gpsc <- subset(lanes, lanes  %in% selected_gpsc_metadata$lane_id)
+multitrees_overall <- keep.tip(multitrees, lanes_gpsc)
+
+#Reorder tree based on order of tip labels
+order <- multitrees_overall$tip.label
+selected_gpsc_metadata <- selected_gpsc_metadata %>%
+  dplyr::slice(match(order, lane_id))
+
+write.table(selected_gpsc_metadata, file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/GPSC8_55_47_6_10_Israel_metadata.txt", sep = "\t", quote = FALSE, row.names = FALSE)
+```
+
+### Load Metadata of GPSC6,8,10,47,55
+
+```{r}
+gpsc6_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPUNK2 == "6"),]
+gpsc8_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPUNK2 == "8"),]
+gpsc10_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPUNK2 == "10"),]
+gpsc47_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPUNK2 == "47"),]
+gpsc55_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPUNK2 == "55"),]
+```
+
+### Generate matrices for relative risk calculations for each GPSC
+
+**input:** 1. Metadata, 2. Bactdating results **output:** 11 matrices for following relative risk calculations
+
+```{r}
+gpsc6_rrmatrix <- RR_matrix(meta_table = gpsc6_metadata, bactdate_tree = gpsc6_bd_res$BactDating$tree, ref_distance_min = 0)
+gpsc8_rrmatrix <- RR_matrix(meta_table = gpsc8_metadata, bactdate_tree = gpsc8_bd_res$BactDating$tree, ref_distance_min = 0)
+gpsc10_rrmatrix <- RR_matrix(meta_table = gpsc10_metadata, bactdate_tree = gpsc10_bd_res$BactDating$tree, ref_distance_min = 0)
+gpsc47_rrmatrix <- RR_matrix(meta_table = gpsc47_metadata, bactdate_tree = gpsc47_bd_res$BactDating$tree, ref_distance_min = 0)
+gpsc55_rrmatrix <- RR_matrix(meta_table = gpsc55_metadata, bactdate_tree = gpsc55_bd_res$BactDating$tree, ref_distance_min = 0)
+```
+
+### Distance vs. Divergence time relationship
+
+```{r}
+### GPSC6
+gpsc6_distance_dist <- as.data.frame(to.upper(gpsc6_rrmatrix$distance_num_mat))
+gpsc6_divtime_dist <- as.data.frame(to.upper(gpsc6_rrmatrix$divtime_num_mat))
+gpsc6_divtime_distance <- cbind(gpsc6_divtime_dist, gpsc6_distance_dist)
+colnames(gpsc6_divtime_distance) <- c("divtime", "distance")
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC6_distance_divtime_dots.png")
+plot(gpsc6_divtime_distance$divtime, gpsc6_divtime_distance$distance)
+dev.off()
+
+### GPSC8
+gpsc8_distance_dist <- as.data.frame(to.upper(gpsc8_rrmatrix$distance_num_mat))
+gpsc8_divtime_dist <- as.data.frame(to.upper(gpsc8_rrmatrix$divtime_num_mat))
+gpsc8_divtime_distance <- cbind(gpsc8_divtime_dist, gpsc8_distance_dist)
+colnames(gpsc8_divtime_distance) <- c("divtime", "distance")
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC8_distance_divtime_dots.png")
+plot(gpsc8_divtime_distance$divtime, gpsc8_divtime_distance$distance)
+dev.off()
+
+### GPSC10
+gpsc10_distance_dist <- as.data.frame(to.upper(gpsc10_rrmatrix$distance_num_mat))
+gpsc10_divtime_dist <- as.data.frame(to.upper(gpsc10_rrmatrix$divtime_num_mat))
+gpsc10_divtime_distance <- cbind(gpsc10_divtime_dist, gpsc10_distance_dist)
+colnames(gpsc10_divtime_distance) <- c("divtime", "distance")
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC10_distance_divtime_dots.png")
+plot(gpsc10_divtime_distance$divtime, gpsc10_divtime_distance$distance)
+dev.off()
+
+### GPSC47
+gpsc47_distance_dist <- as.data.frame(to.upper(gpsc47_rrmatrix$distance_num_mat))
+gpsc47_divtime_dist <- as.data.frame(to.upper(gpsc47_rrmatrix$divtime_num_mat))
+gpsc47_divtime_distance <- cbind(gpsc47_divtime_dist, gpsc47_distance_dist)
+colnames(gpsc47_divtime_distance) <- c("divtime", "distance")
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC47_distance_divtime_dots.png")
+plot(gpsc47_divtime_distance$divtime, gpsc47_divtime_distance$distance)
+dev.off()
+
+### GPSC55
+gpsc55_distance_dist <- as.data.frame(to.upper(gpsc55_rrmatrix$distance_num_mat))
+gpsc55_divtime_dist <- as.data.frame(to.upper(gpsc55_rrmatrix$divtime_num_mat))
+gpsc55_divtime_distance <- cbind(gpsc55_divtime_dist, gpsc55_distance_dist)
+colnames(gpsc55_divtime_distance) <- c("divtime", "distance")
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC55_distance_divtime_dots.png")
+plot(gpsc55_divtime_distance$divtime, gpsc55_divtime_distance$distance)
+dev.off()
+
+### GPSC all
+gpsc_all_divtime_distance <- rbind(gpsc6_divtime_distance, gpsc8_divtime_distance, gpsc10_divtime_distance,
+                                   gpsc47_divtime_distance, gpsc55_divtime_distance)
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/GPSC_all_divtime_dots.png")
+plot(gpsc_all_divtime_distance$divtime, gpsc_all_divtime_distance$distance)
+dev.off()
+```
+
+### Generate distant pairs distribution with district information (all pairs)
+```{r}
+lane.names <- metadata$lane_id
+vector_longitude <- metadata$Longitude
+vector_latitude <- metadata$Latitude
+lonlat_list1 = data.frame(longitude = vector_longitude,
+                            latitude = vector_latitude)
+lonlat_list2 = data.frame(longitude = vector_longitude,
+                            latitude = vector_latitude)
+
+distance_mat = distm(lonlat_list1[,c("longitude","latitude")], lonlat_list2[,c("longitude","latitude")], fun = distHaversine)
+distance_mat = distance_mat / 1000 ## change to km
+distance_num_mat = distance_mat
+diag(distance_num_mat) = NA
+colnames(distance_num_mat) = lane.names
+rownames(distance_num_mat) = lane.names
+
+distance_num_upper_mat <- matrix(NA, nrow = nrow(distance_num_mat), ncol = ncol(distance_num_mat))
+distance_num_upper_mat[upper.tri(distance_num_upper_mat)] <- distance_num_mat[upper.tri(distance_num_mat)] 
+colnames(distance_num_upper_mat) = lane.names
+rownames(distance_num_upper_mat) = lane.names
+distance_num_upper_df <- 
+ as.data.frame(as.table(distance_num_upper_mat))
+colnames(distance_num_upper_df) <- c("lane1", "lane2", "distance")
+
+distance_num_upper_df_nona <- na.omit(distance_num_upper_df)
+
+for (r in 1:nrow(distance_num_upper_df_nona)) {
+  distance_num_upper_df_nona[r, "district1"] <- metadata[which(metadata$lane_id == distance_num_upper_df_nona[r, "lane1"]), "REGION"]
+  distance_num_upper_df_nona[r, "district2"] <- metadata[which(metadata$lane_id == distance_num_upper_df_nona[r, "lane2"]), "REGION"]
+}
+
+
+distance_num_upper_df_nona$district_info <- paste(distance_num_upper_df_nona$district1, distance_num_upper_df_nona$district2, sep=" - ")
+
+sorted_distance_district <- distance_num_upper_df_nona[order(distance_num_upper_df_nona$distance), ]
+
+write.table(sorted_distance_district, file = "sorted_distance_distribution_district_info.txt", sep="\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+x_scale = c(seq(from=0, to=100, by=10), seq(from=100, to=300, by=50))
+p <- sorted_distance_district %>%
+  #filter( distance > 25 & distance < 30) %>%
+  ggplot(aes(x=distance, fill=district_info, show.legend=TRUE)) +
+  #scale_fill_discrete(guide="none")+
+    geom_histogram( binwidth=5, alpha=0.9) +
+    ggtitle("Bin size = 5 km") +
+    theme(
+      plot.title = element_text(size=15)
+    )+
+  theme_bw()+
+  labs(
+    fill="Pairwise District"
+  )+
+  scale_x_continuous(breaks = x_scale)
+
+```
+
+### Generate distant pairs distribution with district information (selected pair)
+```{r}
+lane.names <- selected_gpsc_metadata$lane_id
+vector_longitude <- selected_gpsc_metadata$Longitude
+vector_latitude <- selected_gpsc_metadata$Latitude
+lonlat_list1 = data.frame(longitude = vector_longitude,
+                            latitude = vector_latitude)
+lonlat_list2 = data.frame(longitude = vector_longitude,
+                            latitude = vector_latitude)
+
+distance_mat = distm(lonlat_list1[,c("longitude","latitude")], lonlat_list2[,c("longitude","latitude")], fun = distHaversine)
+distance_mat = distance_mat / 1000 ## change to km
+distance_num_mat = distance_mat
+diag(distance_num_mat) = NA
+colnames(distance_num_mat) = lane.names
+rownames(distance_num_mat) = lane.names
+
+distance_num_upper_mat <- matrix(NA, nrow = nrow(distance_num_mat), ncol = ncol(distance_num_mat))
+distance_num_upper_mat[upper.tri(distance_num_upper_mat)] <- distance_num_mat[upper.tri(distance_num_mat)] 
+colnames(distance_num_upper_mat) = lane.names
+rownames(distance_num_upper_mat) = lane.names
+distance_num_upper_df <- 
+ as.data.frame(as.table(distance_num_upper_mat))
+colnames(distance_num_upper_df) <- c("lane1", "lane2", "distance")
+
+distance_num_upper_df_nona <- na.omit(distance_num_upper_df)
+
+for (r in 1:nrow(distance_num_upper_df_nona)) {
+  distance_num_upper_df_nona[r, "district1"] <- selected_gpsc_metadata[which(selected_gpsc_metadata$lane_id == distance_num_upper_df_nona[r, "lane1"]), "REGION"]
+  distance_num_upper_df_nona[r, "district2"] <- selected_gpsc_metadata[which(selected_gpsc_metadata$lane_id == distance_num_upper_df_nona[r, "lane2"]), "REGION"]
+}
+
+
+distance_num_upper_df_nona$district_info <- paste(distance_num_upper_df_nona$district1, distance_num_upper_df_nona$district2, sep=" - ")
+
+sorted_distance_district <- distance_num_upper_df_nona[order(distance_num_upper_df_nona$distance), ]
+
+write.table(sorted_distance_district, file = "sorted_distance_distribution_district_info.txt", sep="\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+sort_dist <- read.table("/Users/hc14/Documents/SpneumoIsrael/analysis_results/sorted_distance_distribution_district_info.txt", sep="\t", header = TRUE, quote = "", comment.char="@")
+x_scale = c(seq(from=0, to=100, by=10), seq(from=100, to=300, by=50))
+p <- sorted_distance_district %>%
+  #filter( distance > 25 & distance < 30) %>%
+  ggplot(aes(x=distance, fill=district_info, show.legend=TRUE)) +
+  #scale_fill_discrete(guide="none")+
+    geom_histogram( binwidth=5, alpha=0.9) +
+    ggtitle("Bin size = 5 km") +
+    theme(
+      plot.title = element_text(size=15)
+    )+
+  theme_bw()+
+  labs(
+    fill="Pairwise District"
+  )+
+  scale_x_continuous(breaks = x_scale)
+
+```
+
+
+### Distance vs. Divergence time with confidence interval by sampling the posterior bactdating trees
+
+#### procedures:
+Take each GPSC
+1. Sample the posterior bactdating trees (we want to sample posterior trees sequentially through the MCMC trace)
+2. Reconstruct the sampled posterior trees
+3. Calculate mean pairwise evolutionary divergence time from all the sampled trees
+4. Identify pairs within evolutionary divergence time
+5. Sample pairs with replacement (bootstrap)
+6. Extract spatial distance per evolutionary window
+7. Calculate mean spatial  per evolutionary window
+
+**Inputs:** 1. metadata, 2. bactdating results
+```{r}
+Dtime_Dist_CI_posterior_tree <- function(metadata, bd_res, initial_window=5, Ntreestosample=100, divtime_nboot=20, upper_window=50)
+{
+  ################################################################
+  ## Sample trees from BactDating posterior
+  ## Noemie Lefrancq
+  ## Last update 21/09/2023
+  ################################################################
+  
+  ## Load Bactdating result
+  
+  #resbd <- readRDS('bd_GPSC8')
+  Ntips = length(bd_res$BactDating$tree$tip.label)
+  Ntreestosample = 100
+  ## ID of tree to sample
+  tree_ID = round(seq(1, nrow(bd_res$BactDating$record), length.out = Ntreestosample))
+  ################################################################
+  ## Reconstruct one tree from the trace
+  ################################################################
+  ## Withdraw node heights
+  
+  posterior_sampling <- array(NA, dim=c(Ntips, Ntips, Ntreestosample))
+  for(samp in 1:Ntreestosample){
+    tip_dates = bd_res$BactDating$record[tree_ID[samp],1:Ntips]
+    node_dates = bd_res$BactDating$record[tree_ID[samp],(Ntips+1):(2*Ntips-1)]
+    tipandnodes_dates = c(tip_dates, node_dates)
+    
+    ## Take BD final tree for template
+    reconstructed_tree = bd_res$BactDating$tree
+    ## Replace edge lengths, based on the tip and node dates that were extracted above
+    reconstructed_tree$edge.length = tipandnodes_dates[reconstructed_tree$edge[,2]] - tipandnodes_dates[reconstructed_tree$edge[,1]]
+    ## pairwise distance
+    reconstructed_pairwise_dist = cophenetic.phylo(reconstructed_tree)
+    posterior_sampling[,,samp] <- reconstructed_pairwise_dist
+  }
+  
+  for (i in 1:Ntips) {
+    gpsc_divtime_posterior_mean <- apply(posterior_sampling, c(1,2), FUN=function(isamp) mean(isamp))
+    gpsc_divtime_posterior_upperci <- apply(posterior_sampling, c(1,2), FUN = function(isamp) quantile(isamp, probs = 0.975, na.rm = T))
+    gpsc_divtime_posterior_lowerci <- apply(posterior_sampling, c(1,2), FUN = function(isamp) quantile(isamp, probs = 0.075, na.rm = T))
+  }
+  
+  gpsc_rrmatrix <- RR_matrix(meta_table = metadata, bactdate_tree = bd_res$BactDating$tree)
+  gpsc_distance_dist <- as.data.frame(to.upper(gpsc_rrmatrix$distance_num_mat))
+  gpsc_divtime_dist <- as.data.frame(to.upper(gpsc_divtime_posterior_mean))
+  gpsc_dist_divtime_boot <- cbind(gpsc_distance_dist, gpsc_divtime_dist)
+  colnames(gpsc_dist_divtime_boot) <- c("distance", "divtime")
+  
+  nboot = divtime_nboot
+  x_divtime_max = seq(from=initial_window, to=upper_window, by=1)
+  x_divtime_min = rep(0, length(x_divtime_max))
+  #x_divtime_min = seq(from=0, to=20, by=1)
+  
+  boot_select <- data.frame()
+  for (win in 1:length(x_divtime_max)) {
+    boot.mean <- c()
+    for (n in 1:nboot) {
+      a = which(gpsc_dist_divtime_boot$divtime > x_divtime_min[win] &
+                  gpsc_dist_divtime_boot$divtime < x_divtime_max[win])        #select a certain region (index)
+      if (length(a)!=0){
+        b = sample(x=a, size=100, replace = T)  #subsample with replacement
+        resample.mean <- mean(gpsc_dist_divtime_boot[b, ]$distance)
+        boot.mean <- c(boot.mean, resample.mean)
+      }
+    }
+    distance.med <- quantile(boot.mean, probs = c(0.5), na.rm=T) #calculate confidence interval
+    distance.mean <- mean(boot.mean)
+    distance.upperci <- quantile(boot.mean, probs = c(0.975), na.rm=T)
+    distance.lowerci <- quantile(boot.mean, probs = c(0.025), na.rm=T)
+    mid_win <- mean(c(x_divtime_min[win], x_divtime_max[win]))
+    window_divtime_distance <- cbind(x_divtime_min[win], x_divtime_max[win], mid_win, distance.med, distance.mean, distance.upperci, distance.lowerci)
+    boot_select <- rbind(boot_select, window_divtime_distance)
+  }
+  
+  res_bootstrap_divtime_dist = list("window_divtime_dist" = boot_select, "divtime_dist_table" = gpsc_dist_divtime_boot)
+  return(res_bootstrap_divtime_dist)
+}
+```
+
+#### run Dtime_Dist_CI_posterior_tree for each GPSC
+````{r}
+gpsc6_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc6_metadata, gpsc6_bd_res)
+gpsc8_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc8_metadata, gpsc8_bd_res)
+gpsc10_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc10_metadata, gpsc10_bd_res)
+gpsc47_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc47_metadata, gpsc47_bd_res, initial_window=10)
+gpsc55_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc55_metadata, gpsc55_bd_res)
+````
+
+#### plot Distance CI vs. Divergence 
+```{r}
+gpsc6_dist_div <- ggplot(gpsc6_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/gpsc6_dist_div.pdf")
+gpsc6_dist_div
+dev.off()
+
+gpsc8_dist_div <- ggplot(gpsc8_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/gpsc8_dist_div.pdf")
+gpsc8_dist_div
+dev.off()
+
+gpsc10_dist_div <- ggplot(gpsc10_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/gpsc10_dist_div.pdf")
+gpsc10_dist_div
+dev.off()
+
+gpsc47_dist_div <- ggplot(gpsc47_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/gpsc47_dist_div.pdf")
+gpsc47_dist_div
+dev.off()
+
+gpsc55_dist_div <- ggplot(gpsc55_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/gpsc55_dist_div.pdf")
+gpsc55_dist_div
+dev.off()
+```
+```{r}
+gpsc_ind_divtime_distance_CI <- plot_grid(gpsc6_dist_div, gpsc8_dist_div, gpsc10_dist_div, gpsc47_dist_div, gpsc55_dist_div,scale=c(1,1,1,1,1), align = "hv", nrow = 3)
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/each_gpsc_divtime_distance_CI.pdf", width = 4, height = 6)
+gpsc_ind_divtime_distance_CI
+dev.off()
+```
+
+#### GPSC all divergence vs. spatial distance
+
+```{r}
+initial_window = 1
+upper_window = 50 
+gpsc_dist_divtime_boot <- rbind(gpsc6_Dtime_Dist_CI_posterior_tree$divtime_dist_table,
+                                gpsc8_Dtime_Dist_CI_posterior_tree$divtime_dist_table,
+                                gpsc10_Dtime_Dist_CI_posterior_tree$divtime_dist_table,
+                                gpsc47_Dtime_Dist_CI_posterior_tree$divtime_dist_table,
+                                gpsc55_Dtime_Dist_CI_posterior_tree$divtime_dist_table)
+nboot = 100
+
+x_divtime_max = seq(from=initial_window, to=upper_window, by=1)
+x_divtime_min = rep(0, length(x_divtime_max))
+#x_divtime_min = seq(from=0, to=20, by=1)
+
+boot_select <- data.frame()
+for (win in 1:length(x_divtime_max)) {
+  boot.mean <- c()
+  for (n in 1:nboot) {
+    a = which(gpsc_dist_divtime_boot$divtime > x_divtime_min[win] &
+                gpsc_dist_divtime_boot$divtime < x_divtime_max[win])        #select a certain region (index)
+    if (length(a)!=0){
+      b = sample(x=a, size=100, replace = T)  #subsample with replacement
+      resample.mean <- mean(gpsc_dist_divtime_boot[b, ]$distance)
+      boot.mean <- c(boot.mean, resample.mean)
+    }
+  }
+  distance.med <- quantile(boot.mean, probs = c(0.5), na.rm=T) #calculate confidence interval
+  distance.mean <- mean(boot.mean)
+  distance.upperci <- quantile(boot.mean, probs = c(0.975), na.rm=T)
+  distance.lowerci <- quantile(boot.mean, probs = c(0.025), na.rm=T)
+  mid_win <- mean(c(x_divtime_min[win], x_divtime_max[win]))
+  window_divtime_distance <- cbind(x_divtime_min[win], x_divtime_max[win], mid_win, distance.med, distance.mean, distance.upperci, distance.lowerci)
+  boot_select <- rbind(boot_select, window_divtime_distance)
+}
+
+gpscAll_divtime_distance_CI <- ggplot(boot_select, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
+  geom_line()+
+  geom_ribbon(fill="pink", alpha=0.5)+
+  #xlim(0,60)+
+  xlab("Divergence Time \n (years)")+
+  ylab("Distance (km)")+
+  ylim(c(0,87))+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"), text = element_text(family = "Helvetica"))
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/divtime_distance_CI.pdf")
+gpscAll_divtime_distance_CI
+dev.off()
+```
+### Figure 3: bactdating tree + Divergence time vs. spatial distance
+
+```{r}
+gpsc6_bdtree <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC6_bdtree.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+gpsc8_bdtree <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC8_bdtree.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+gpsc10_bdtree <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC10_bdtree.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+gpsc47_bdtree <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC47_bdtree.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+gpsc55_bdtree <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC55_bdtree.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+Israel_gpscAll_bdtree <- plot_grid(gpsc6_bdtree, gpsc8_bdtree, gpsc10_bdtree, gpsc47_bdtree, gpsc55_bdtree, gpscAll_divtime_distance_CI, scale=c(1.48,1.48,1.48,1.48,1.48,0.9), align = "hv", nrow = 3)
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure3/bactdating_tree/GPSC_all_bactdate_tree_divtime_distance.pdf")
+Israel_gpscAll_bdtree
+dev.off()
+
+```
+
+
+### Relative risk of Spread: lineage v.s. district
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+rr_lineage_location_mat = RR_matrix(selected_gpsc_metadata, multitrees)
+
+colyear_mat_ones = matrix(1, nrow=dim(selected_gpsc_metadata)[1], ncol=dim(selected_gpsc_metadata)[1])  ## don't select by collection year
+rr = RR_bootstrap(metadataset = selected_gpsc_metadata,
+                  des_geo_matrix = rr_lineage_location_mat$des_location_mat,
+                  ref_geo_matrix = rr_lineage_location_mat$ref_location_mat,
+                  des_strain_matrix = rr_lineage_location_mat$des_lineage_mat,
+                  ref_strain_matrix = rr_lineage_location_mat$ref_lineage_mat,
+                  colyear_mat_ones, nboot = 100, subsample_min = 70)
+## load library: ggplot2
+district_lineage_rr = PltRR(rr, "Within District Relative Ratio", "District")
+
+# metadata: metadata
+lineage_matrix <- RR_matrix_notree(meta_table = metadata)
+
+colyear_mat_ones = matrix(1, nrow=dim(metadata)[1], ncol=dim(metadata)[1])  ## don't select by collection year
+rr = RR_bootstrap(metadataset = metadata,
+                  des_geo_matrix = lineage_matrix$des_location_mat,
+                  ref_geo_matrix = lineage_matrix$ref_location_mat,
+                  des_strain_matrix = lineage_matrix$des_lineage_mat,
+                  ref_strain_matrix = lineage_matrix$ref_lineage_mat,
+                  colyear_mat_ones, nboot = 100, subsample_min = 70)
+
+## load library: ggplot2
+district_lineage_rr = PltRR(rr, "Within District Relative Ratio", "District")
+
+```
+
+### Relative risk of Spread: lineage v.s. spatial distance
+rolling window from 0-30 to 120-150 km 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+des_distance_min1 = c(0,1)
+des_distance_min2 = seq(from=5, to=25, by=5)
+des_distance_min3 = seq(from=30, to=90, by=10)
+des_distance_min = append(append(des_distance_min1, des_distance_min2), des_distance_min3)
+des_distance_max1 = c(1,5)
+des_distance_max2 = seq(from=10, to=30, by=5)
+des_distance_max3 = seq(from=40, to=100, by=10)
+des_distance_max = append(append(des_distance_max1, des_distance_max2), des_distance_max3)
+
+des_distance_range = length(des_distance_max)
+
+res_list = c()
+res_df = data.frame()
+
+colyear_mat_ones = matrix(1, nrow=dim(metadata)[1], ncol=dim(metadata)[1])
+diag(colyear_mat_ones) <- NA
+
+RRplotLists = list()
+RRdistanceLists = list()
+RRdframLists = list()
+
+for(distances in 1:des_distance_range){
+  distance_name = paste0("Distance: ",des_distance_min[distances],"~",des_distance_max[distances],"km")
+  dist_lineage_mat = RR_matrix_notree(meta_table = metadata, 
+                               des_distance_min = des_distance_min[distances],
+                               des_distance_max = des_distance_max[distances], 
+                               ref_distance_min = 50, ref_distance_max = 300)
+  dist_lineage_mat_rr = RR_bootstrap(metadataset = metadata,
+                                     des_geo_matrix = dist_lineage_mat$des_distance_mat,
+                                     ref_geo_matrix = dist_lineage_mat$ref_distance_mat,
+                                     des_strain_matrix = dist_lineage_mat$des_lineage_mat,
+                                     ref_strain_matrix = dist_lineage_mat$ref_lineage_mat,
+                                     colyear_matrix = colyear_mat_ones,
+                                     nboot = 100,
+                                     subsample_min = 100)
+  rr_plot = PltRR(dist_lineage_mat_rr, distance_name, distance_name)
+  RRplotLists[[distances]] = print(rr_plot)
+  
+  distances_col = data.frame(distance_min=des_distance_min[distances], distance_max=des_distance_max[distances], distance_mid = (des_distance_min[distances]+des_distance_max[distances])/2)
+  new_row = cbind(dist_lineage_mat_rr, distances_col)
+  res_df = rbind(res_df, new_row)
+  
+  assign(distance_name, rr_plot)
+  res_list=c(res_list, distance_name)
+}
+
+```
+
+### Figure 2: Combine plots 1. lineage vs. district & plot 2. lineage vs. spatial distance
+```{r}
+dist_district_lineage_rr_table <- rbind(res_df, rr, fill=TRUE)
+for(i in 1:nrow(dist_district_lineage_rr_table)){
+  dist_district_lineage_rr_table[i, "distance_window"] = paste0(dist_district_lineage_rr_table[i, "distance_min"],"-" ,dist_district_lineage_rr_table[i, "distance_max"])
+}
+dist_district_lineage_rr_table[nrow(dist_district_lineage_rr_table), "distance_window"] = "within \ndistrict"
+dist_district_lineage_rr_table$distance_window = as.factor(dist_district_lineage_rr_table$distance_window)
+
+
+#png(filename = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/rolling_distance_RR.png", res=1200, width = 5000, height = 3000)
+dist_district_lineage_rr_table$distance_window <- ordered(dist_district_lineage_rr_table$distance_window, levels=c("0-1", "1-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100", "within \ndistrict"))
+rolling_distance_RR_plot_50km <- ggplot(dist_district_lineage_rr_table, aes(x=distance_window, y=RR_mean))+
+  geom_pointrange(data=dist_district_lineage_rr_table, mapping=aes(x=as.factor(distance_window), y=RR_mean, ymin = RR_lower_ci, ymax = RR_upper_ci), alpha=0.9) +
+  geom_hline(yintercept=1, linetype="dashed", color = "red") + ##dashed line at 1
+  #scale_y_log10()+
+  ylab("Risk Ratio")+
+  xlab("Distance window (km)")+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_rect(xmin = 14.5, xmax = 15.5, ymin = -1,  ymax = 5,
+            fill = 'blue', alpha = 0.01) +
+  geom_rect(xmin = 0, xmax = 15.5, ymin = -1, ymax = 5,
+            fill = 'red', alpha = 0.01)
+
+rolling_distance_RR_plot_50km
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure2/rolling_distance_RR_50km.png", width = 800, height = 300)
+rolling_distance_RR_plot_50km
+dev.off()
+
+#dev.off()
+save.image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/RR_results_20230925")
+
+```
+
+### Rolling divergence vs. relative ratio | within district vs. between district
+
+```{r}
+des_divtime_min1 = seq(from=0, to=8, by=2)
+des_divtime_min2 = seq(from=10, to=15, by=5)
+des_divtime_min = c(des_divtime_min1, des_divtime_min2, 20)
+des_divtime_max1 = seq(from=2, to=10, by=2)
+des_divtime_max2 = seq(from=15, to=20, by=5)
+des_divtime_max = c(des_divtime_max1, des_divtime_max2, 30)
+des_divtime_range = length(des_divtime_max)
+
+res_list = c()
+res_df_divtime = data.frame()
+
+colyear_mat_ones = matrix(1, nrow=dim(selected_gpsc_metadata)[1], ncol=dim(selected_gpsc_metadata)[1])
+diag(colyear_mat_ones) <- NA
+
+RRplotLists = list()
+RRdivtimeLists = list()
+RRdframLists = list()
+
+for(divtimes in 1:des_divtime_range){
+  divtime_name = paste0("Divergence: ",des_divtime_min[divtimes],"-",des_divtime_max[divtimes],"yrs")
+  loc_divtime_mat = RR_matrix(meta_table = selected_gpsc_metadata, bactdate_tree = multitrees,
+                              des_divtime_min = des_divtime_min[divtimes],
+                              des_divtime_max = des_divtime_max[divtimes])
+  loc_divtime_mat_rr = RR_bootstrap(metadataset = selected_gpsc_metadata,
+                                    des_geo_matrix = loc_divtime_mat$des_location_mat,
+                                    ref_geo_matrix = loc_divtime_mat$ref_location_mat,
+                                    des_strain_matrix = loc_divtime_mat$des_divtime_mat,
+                                    ref_strain_matrix = loc_divtime_mat$ref_divtime_mat,
+                                    colyear_matrix = colyear_mat_ones,
+                                    nboot = 100,
+                                    subsample_min = 70)
+  rr_plot = PltRR(loc_divtime_mat_rr, divtime_name, divtime_name)
+  RRplotLists[[divtimes]] = print(rr_plot)
+  
+  divtimes_col = data.frame(divtime_min=des_divtime_min[divtimes], divtime_max=des_divtime_max[divtimes], divtime_mid = (des_divtime_min[divtimes]+des_divtime_max[divtimes])/2)
+  new_row = cbind(loc_divtime_mat_rr, divtimes_col)
+  res_df_divtime = rbind(res_df_divtime, new_row)
+  
+  assign(divtime_name, rr_plot)
+  res_list=c(res_list, divtime_name)
+}
+
+write.table(res_df_divtime, "rolling_distance_divtime_district.txt", sep = "\t", quote = FALSE, row.names =FALSE, col.names = TRUE)
+
+rolling_distance_divtime <- PltRR_rolling_divtime(res_df_divtime,"rolling divergence")+
+  scale_x_discrete(labels = c("0-2", "2-4", "4-6", "6-8", "8-10", "10-15", "15-20", "20-30"))+
+  #scale_y_continuous(breaks = c(0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5), labels = c("0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"))+
+  scale_y_log10(limits=c(0.1,7))+
+  ggtitle("By District")+
+  theme(axis.text = element_text(size=18),title = element_text(size=20))
+```
+
+### Rolling divergence vs. relative ratio | close area (0-30 km) vs. distant area
+
+```{r}
+des_divtime_min1 = seq(from=0, to=8, by=2)
+des_divtime_min2 = seq(from=10, to=15, by=5)
+des_divtime_min = c(des_divtime_min1, des_divtime_min2, 20)
+des_divtime_max1 = seq(from=2, to=10, by=2)
+des_divtime_max2 = seq(from=15, to=20, by=5)
+des_divtime_max = c(des_divtime_max1, des_divtime_max2, 30)
+des_divtime_range = length(des_divtime_max)
+
+res_list = c()
+res_df = data.frame()
+
+colyear_mat_ones = matrix(1, nrow=dim(selected_gpsc_metadata)[1], ncol=dim(selected_gpsc_metadata)[1])
+diag(colyear_mat_ones) <- NA
+
+RRplotLists = list()
+RRdivtimeLists = list()
+RRdframLists = list()
+
+for(divtimes in 1:des_divtime_range){
+  divtime_name = paste0("Divergence: ",des_divtime_min[divtimes],"~",des_divtime_max[divtimes],"yrs")
+  loc_divtime_mat = RR_matrix(meta_table = selected_gpsc_metadata, bactdate_tree = multitrees,
+                              des_divtime_min = des_divtime_min[divtimes],
+                              des_divtime_max = des_divtime_max[divtimes],
+                              des_distance_min = 0,
+                              des_distance_max = 30, 
+                              ref_distance_min = 150,
+                              ref_distance_max = 300)
+  loc_divtime_mat_rr = RR_bootstrap(metadataset = selected_gpsc_metadata,
+                                    des_geo_matrix = loc_divtime_mat$des_distance_mat,
+                                    ref_geo_matrix = loc_divtime_mat$ref_distance_mat,
+                                    des_strain_matrix = loc_divtime_mat$des_divtime_mat,
+                                    ref_strain_matrix = loc_divtime_mat$ref_divtime_mat,
+                                    colyear_matrix = colyear_mat_ones,
+                                    nboot = 100,
+                                    subsample_min = 70)
+  rr_plot = PltRR(loc_divtime_mat_rr, divtime_name, divtime_name)
+  RRplotLists[[divtimes]] = print(rr_plot)
+  
+  divtimes_col = data.frame(divtime_min=des_divtime_min[divtimes], divtime_max=des_divtime_max[divtimes], divtime_mid = (des_divtime_min[divtimes]+des_divtime_max[divtimes])/2)
+  new_row = cbind(loc_divtime_mat_rr, divtimes_col)
+  res_df = rbind(res_df, new_row)
+  
+  assign(divtime_name, rr_plot)
+  res_list=c(res_list, divtime_name)
+}
+
+write.table(res_df, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure4/rolling_distance_divtime_30km_150kmRef.txt", sep = "\t", quote = FALSE, row.names =FALSE, col.names = TRUE)
+
+rolling_distance_divtime_30km_150kmRef <- PltRR_rolling_divtime(res_df,"rolling divergence")+
+  scale_x_discrete(labels = c("0-2", "2-4", "4-6", "6-8", "8-10", "10-15", "15-20", "20-30"))+
+  #scale_y_continuous(breaks = c(0.5, 1, 1.5, 2, 3, 4, 5, 6, 7), labels = c("0.5", "1.0", "1.5", "2.0", "3.0",  "4.0", "5.0", "6.0", "7.0"))+
+  scale_y_log10(limits=c(0.1,18))+
+  ggtitle("By Distance")+
+  theme(axis.text = element_text(size=18),title = element_text(size=20))
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure4/rolling_divtime_30km_150kmRef.png")
+rolling_distance_divtime_30km_150kmRef
+dev.off()
+```
+
+### Figure 4: rolling divergence vs. relative risk ratio
+
+```{r}
+rolling_divergence_rr_80kmRef <- plot_grid(rolling_distance_divtime, NULL,rolling_distance_divtime_30km_80kmRef, rel_widths=c(1,0,1),rel_heights=c(1,0,1), scale=c(1,0,1), align = "hv", nrow = 1)
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure4/figure4_30km_100kmRef.png", width = 1000, height = 300)
+rolling_divergence_rr_80kmRef
+dev.off()
+
+
+rolling_divergence_rr_sensitive <- plot_grid(rolling_distance_divtime_30km_0kmRef,rolling_distance_divtime_30km_50kmRef, rolling_distance_divtime_30km_80kmRef, rel_widths=c(1,1,1),rel_heights=c(1,1,1), scale=c(1,1,1), align = "hv", nrow = 2, labels = "AUTO")
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure4/rolling_divergence_rr_sensitive.png", width = 1600, height = 800)
+rolling_divergence_rr_sensitive
+dev.off()
+```
+
+### Israel map GPSC distributions
+
+```{r}
+library(maptools)
+library(sf)
+library(rgdal)
+library(raster)
+library(sp)
+library(ggplot2)
+library(rgeos)
+library(data.table)
+library(ggsn)
+library(scatterpie)
+library(RColorBrewer)
+library(viridis)
+library(hash)
+library(ggsci)
+setwd("/Users/hc14/Documents/SpneumoIsrael/analysis_results")
+
+### Generate Israel MAP Plot ####
+#--- read in shapefile
+Israel_shp <- (file = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/gadm41_ISR_shp/gadm41_ISR_1.shp")
+shp <- sf::st_read(Israel_shp)
+
+provs=c("Golan","HaDarom","Haifa","HaMerkaz","HaZafon","Jerusalem","Tel Aviv" )
+cols = c("#1A9D75","#D95E02","#7470B3","#E7288B","#66A71E","#E7AB02","#A7761C")
+
+shp.trans <- shp %>%
+  st_geometry() %>%
+  st_transform(crs = '+proj=aeqd ') #+lat_0=53.6 +lon_0=12.7')
+shp.trans_simpl <- st_simplify(shp.trans, preserveTopology = FALSE, dTolerance = 1000)
+
+shp.tmp<-shp
+shp.tmp$geometry <- shp.trans_simpl
+
+save(shp.tmp,file="Israel_shp.tmp.RData")
+Israel_map = ggplot(data=shp.tmp)+
+  geom_sf(data=shp.tmp,aes(fill=NAME_1) )+
+  theme_classic()+
+  scale_fill_manual(breaks=provs,values=cols,name="Province")+
+  # ggtitle("A")+
+  theme(axis.text=element_blank(),legend.text = element_text(size=15),legend.title = element_text(size=15),title = element_text(size=20))+
+  scalebar(data=shp.tmp,dist = 10,dist_unit = "km", location="bottomleft",transform = FALSE,
+           model = "WGS84", height = 0.03, st.bottom=TRUE,
+           st.dist = 0.04,st.size = 6)+
+  theme(axis.title=element_blank())
+
+#----------------------------------
+metadata_file_path = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/Israel_GPSC_city_region.csv"
+metadata = read.csv(metadata_file_path)
+
+{
+  ### Israel district translate table
+  
+  metadata$REGION[202] = "HaDarom"   #SOROKA HOSPITAL BEER SHEVA is in HaDarom (southern)
+  metadata$REGION[308] = "HaDarom"   #SOROKA HOSPITAL BEER SHEVA is in HaDarom (southern)
+  metadata$REGION[356] = "Jerusalem"   #SHAARE ZEDEK HOSPITAL JERUSALEM is in Jerusalem
+  metadata$REGION[382] = "HaMerkaz"   #BEILINSON HOSPITAL PETAH TIKVA is in HaMerkaz (center)
+  metadata$REGION[383] = "HaMerkaz"   #BEILINSON HOSPITAL PETAH TIKVA is in HaMerkaz (center)
+  metadata$REGION[413] = "Jerusalem"   #SHAARE ZEDEK HOSPITAL JERUSALEM is in Jerusalem
+  metadata$REGION[418] = "HaMerkaz"   #BEILINSON HOSPITAL PETAH TIKVA is in HaMerkaz (center)
+  metadata$REGION[435] = "HaMerkaz"   #MEIR HOSPITAL KFAR SABA is in HaMerkaz (center)
+  metadata$REGION[570] = "HaMerkaz"   #BEILINSON HOSPITAL PETAH TIKVA is in HaMerkaz (center)
+  metadata$REGION[609] = "HaMerkaz"   #BEILINSON HOSPITAL PETAH TIKVA is in HaMerkaz (center)
+  metadata$REGION[613] = "Tel Aviv"   #MAYANEI HAYESHUA HOSPITAL BNEI BRAK is in Tel Aviv
+  metadata$REGION[692] = "Jerusalem"   #SHAARE ZEDEK HOSPITAL JERUSALEM is in Jerusalem
+  metadata$REGION[694] = "HaMerkaz"   #MEIR HOSPITAL KFAR SABA is in HaMerkaz (center)
+  metadata$REGION[908] = "Jerusalem"   #SHAARE ZEDEK HOSPITAL JERUSALEM is in Jerusalem
+  metadata$REGION[929] = "HaMerkaz"   #MEIR HOSPITAL KFAR SABA is in HaMerkaz (center)
+  
+  # HaDarom = southern
+  # HaMerkaz = center
+  metadata[which(metadata$REGION =="Jerusalem District"), "REGION"] = "Jerusalem"
+  metadata[which(metadata$REGION =="South District"), "REGION"] = "HaDarom"
+  metadata[which(metadata$REGION =="Center District"), "REGION"] = "HaMerkaz"
+  metadata[which(metadata$REGION =="Tel Aviv District"), "REGION"] = "Tel Aviv"
+  metadata[which(metadata$REGION =="North District"), "REGION"] = "HaZafon"
+  metadata[which(metadata$REGION =="Haifa District"), "REGION"] = "Haifa"
+  
+}
+metadata$REGION = as.factor(metadata$REGION)
+shp.tmp$NAME_1 = as.factor(shp.tmp$NAME_1)
+metadata$REGION = factor(metadata$REGION, levels = levels(shp.tmp$NAME_1))
+#levels(metadata$REGION) = c("Golan","HaDarom","Haifa","HaMerkaz","HaZafon","Jerusalem","Tel Aviv")
+country.count<-data.table(table(metadata$REGION,metadata$GPSC_PoPUNK2))
+colnames(country.count)<-c("Region","GPSC", "N")
+coordinates<-st_coordinates(st_centroid(shp.tmp$geometry))
+uni.gpscs.mat<-as.data.frame.matrix(table(metadata$REGION,metadata$GPSC_PoPUNK2))
+uni.gpscs.mat$region<-factor(rownames(uni.gpscs.mat))
+levels(uni.gpscs.mat$region) = c("Golan","HaDarom","Haifa","HaMerkaz","HaZafon","Jerusalem","Tel Aviv")
+uni.gpscs.mat$lat<-coordinates[,1]
+uni.gpscs.mat$lon<-coordinates[,2]
+n<-as.vector(table(metadata$REGION)[1:7])
+uni.gpscs.mat$radius<-abs(rnorm(as.numeric(n)))*10000
+uni.gpscs.mat$radius<-sqrt(as.numeric(n))*800
+
+uni.gpscs.mat[,1:103]<- as.numeric(uni.gpscs.mat[,1:103])
+uni.gpscs.mat[,1:103] <- sapply(uni.gpscs.mat[,1:103], as.numeric)
+
+
+p<-ggplot(data=shp.tmp)+
+  geom_sf(data=shp.tmp )+
+  # geom_point(data=uni.gpscs,aes(x=lat,y=lon,color=V2,size=N),alpha=0.4,width=0.2,height=0.2)+
+  theme_bw()+
+  scale_fill_manual(breaks=provs,values=cols,name="Province")+
+  theme(legend.text = element_text(size=20),legend.title = element_text(size=20),title = element_text(size=20))+
+  scalebar(data=shp.tmp, dist = 40, dist_unit = "km", location="bottomleft", transform = FALSE,
+           model = "WGS84", height = 0.01, st.bottom=TRUE,
+           st.dist = 0.02, st.size = 4, box.fill = c("black", "white"))+
+  theme(axis.title=element_blank(), axis.text = element_text(size=12))
+
+
+
+color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+for (i in 1:nrow(uni.gpscs.mat)) {
+  uni.gpscs.mat[i,"n_isolates"] = sum(uni.gpscs.mat[i, 1:103])
+  uni.gpscs.mat[i,"ntop_isolates"] = sum(uni.gpscs.mat[i, c("6","8","10","47","55")])
+  uni.gpscs.mat[i,"others"] = uni.gpscs.mat[i,"n_isolates"] - uni.gpscs.mat[i,"ntop_isolates"]
+}
+top_gpsc_loc = uni.gpscs.mat[,c("6","8","10","47","55","others","region", "lat", "lon", "radius")]
+
+
+## adjust the pie chart location on Israel map
+top_gpsc_loc[,"lat_pie"] = top_gpsc_loc[,"lat"]
+top_gpsc_loc[,"lon_pie"] = top_gpsc_loc[,"lon"]
+top_gpsc_loc["Tel Aviv","lat_pie"] = 3440000
+top_gpsc_loc["HaMerkaz","lat_pie"] = 3465000
+top_gpsc_loc["Haifa","lat_pie"] = 3443470
+
+for(i in 1:nrow(top_gpsc_loc)){
+  top_gpsc_loc[i,"sample_size"] = sum(top_gpsc_loc[i, 1:6])
+}
+
+Israel_gpsc_map <- p+geom_scatterpie(data=top_gpsc_loc,aes(x=lat_pie, y=lon_pie, group = region,r=radius),cols=colnames(top_gpsc_loc[,c(1:6)]), color=NA, alpha=0.8)+
+  #scale_fill_manual(values=sample(color,6))+
+  scale_fill_lancet()+
+  geom_scatterpie_legend(top_gpsc_loc$sample_size*80, x=3400000, y=3500000, labeller=function(x) x/200, n=3)+
+  labs(fill="GPSC")
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/Israel_gpsc_map.pdf")
+Israel_gpsc_map
+dev.off()
+
+```
+
+### Figure 1
+```{r}
+Israel_gpsc_map_png <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/Israel_map/Israel_gpsc_map.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+microreact <- ggdraw() +
+  draw_image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/microreact/GPSC6_microreact.png", scale = 1)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+
+Israel_gpsc_map_microreact <- plot_grid(Israel_gpsc_map_png, NULL,microreact, rel_widths=c(1,0,3),rel_heights=c(2,0,1), labels=c("A","B"), scale=c(0.8,0,1), label_size = 12, align = "hv", nrow = 1)
+
+pdf("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/Israel_gpsc_map_microreact6.pdf")
+Israel_gpsc_map_microreact
+dev.off()
+
+```
+
+### Relative risk of Spread: lineage v.s. spatial distance
+rolling window from 0-30 to 120-150 km 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+des_distance_min1 = c(0,1)
+des_distance_min2 = seq(from=5, to=25, by=5)
+des_distance_min3 = seq(from=30, to=90, by=10)
+des_distance_min = append(append(des_distance_min1, des_distance_min2), des_distance_min3)
+des_distance_max1 = c(1,5)
+des_distance_max2 = seq(from=10, to=30, by=5)
+des_distance_max3 = seq(from=40, to=100, by=10)
+des_distance_max = append(append(des_distance_max1, des_distance_max2), des_distance_max3)
+
+des_distance_range = length(des_distance_max)
+
+res_list = c()
+res_df = data.frame()
+
+colyear_mat_ones = matrix(1, nrow=dim(metadata)[1], ncol=dim(metadata)[1])
+diag(colyear_mat_ones) <- NA
+
+RRplotLists = list()
+RRdistanceLists = list()
+RRdframLists = list()
+
+for(distances in 1:des_distance_range){
+  distance_name = paste0("Distance: ",des_distance_min[distances],"~",des_distance_max[distances],"km")
+  dist_lineage_mat = RR_matrix_notree(meta_table = metadata, 
+                               des_distance_min = des_distance_min[distances],
+                               des_distance_max = des_distance_max[distances], 
+                               ref_distance_min = 100, ref_distance_max = 300)
+  dist_lineage_mat_rr = RR_bootstrap(metadataset = metadata,
+                                     des_geo_matrix = dist_lineage_mat$des_distance_mat,
+                                     ref_geo_matrix = dist_lineage_mat$ref_distance_mat,
+                                     des_strain_matrix = dist_lineage_mat$des_lineage_mat,
+                                     ref_strain_matrix = dist_lineage_mat$ref_lineage_mat,
+                                     colyear_matrix = colyear_mat_ones,
+                                     nboot = 100,
+                                     subsample_min = 100)
+  rr_plot = PltRR(dist_lineage_mat_rr, distance_name, distance_name)
+  RRplotLists[[distances]] = print(rr_plot)
+  
+  distances_col = data.frame(distance_min=des_distance_min[distances], distance_max=des_distance_max[distances], distance_mid = (des_distance_min[distances]+des_distance_max[distances])/2)
+  new_row = cbind(dist_lineage_mat_rr, distances_col)
+  res_df = rbind(res_df, new_row)
+  
+  assign(distance_name, rr_plot)
+  res_list=c(res_list, distance_name)
+}
+
+
+### Figure 2: Combine plots 1. lineage vs. district & plot 2. lineage vs. spatial distance
+dist_district_lineage_rr_table <- rbind(res_df, rr, fill=TRUE)
+for(i in 1:nrow(dist_district_lineage_rr_table)){
+  dist_district_lineage_rr_table[i, "distance_window"] = paste0(dist_district_lineage_rr_table[i, "distance_min"],"-" ,dist_district_lineage_rr_table[i, "distance_max"])
+}
+dist_district_lineage_rr_table[nrow(dist_district_lineage_rr_table), "distance_window"] = "within \ndistrict"
+dist_district_lineage_rr_table$distance_window = as.factor(dist_district_lineage_rr_table$distance_window)
+
+
+#png(filename = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/rolling_distance_RR.png", res=1200, width = 5000, height = 3000)
+dist_district_lineage_rr_table$distance_window <- ordered(dist_district_lineage_rr_table$distance_window, levels=c("0-1", "1-5", "5-10", "10-15", "15-20", "20-25", "25-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90", "90-100", "within \ndistrict"))
+rolling_distance_RR_plot_100km <- ggplot(dist_district_lineage_rr_table, aes(x=distance_window, y=RR_mean))+
+  geom_pointrange(data=dist_district_lineage_rr_table, mapping=aes(x=as.factor(distance_window), y=RR_mean, ymin = RR_lower_ci, ymax = RR_upper_ci), alpha=0.9) +
+  geom_hline(yintercept=1, linetype="dashed", color = "red") + ##dashed line at 1
+  scale_y_log10(limits=c(0.3,4))+
+  ylab("Risk Ratio")+
+  xlab("Distance window (km)")+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),text = element_text(size=18) )+
+  geom_rect(xmin = 14.5, xmax = 15.5, ymin = -1,  ymax = 5,
+            fill = 'blue', alpha = 0.01) +
+  geom_rect(xmin = 0, xmax = 15.5, ymin = -1, ymax = 5,
+            fill = 'red', alpha = 0.01) 
+
+rolling_distance_RR_plot_100km
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure2/rolling_distance_RR_100kmref_sup.png", width = 800, height = 400)
+rolling_distance_RR_plot_100km
+dev.off()
+
+rolling_distance_RR_plot_sensitive <- plot_grid(rolling_distance_RR_plot_50km, rolling_distance_RR_plot_80km, rolling_distance_RR_plot_100km,scale=c(1,1,1), align = "hv", nrow = 2, labels = "AUTO")
+
+png("/Users/hc14/Documents/SpneumoIsrael/analysis_results/figures/figure2/rolling_distance_RR_sensitive_sup.png", width = 1600, height = 800)
+rolling_distance_RR_plot_sensitive
+dev.off()
+
+
+#dev.off()
+save.image("/Users/hc14/Documents/SpneumoIsrael/analysis_results/RR_results_20230925")
+```
+
+

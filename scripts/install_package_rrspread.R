@@ -1,0 +1,5 @@
+library(usethis)
+library(devtools)
+usethis::create_github_token()
+devtools::install_github("hsuehchien66/rrspread", auth_token = "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")
+library(rrspread)
