@@ -2,7 +2,9 @@
 title: "Israel_RRscript_manuscript"
 author: "Raymond Cheng"
 date: "22/09/2023"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -42,6 +44,7 @@ metadata[c(382,383,418,570,609, 435, 694, 929), "REGION"] = "Center District"
 metadata[613, "REGION"] = "Tel Aviv District"
 region_count <- as.data.frame(table(metadata$REGION))
 colnames(region_count) <- c("District", "Count")
+write.table(metadata, file = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/input/Israel_1174isolates_metadata_input.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 write.table(region_count, file = "Israel_region_count.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 ```
 
