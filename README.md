@@ -81,8 +81,9 @@ GPSC6,8,10,47,55 are selected for Israel migration analysis
 
 ```r
 ## This is the example for GPSC6, run this section for other GPSCs
+
 gpsc6_gubbin_tree_path = "GPSC6_reference_bwa.final_tree.tre"
-  gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
+gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
 ```
 
 ## Run BactDating (time-consuming)
@@ -100,6 +101,7 @@ In **time_resolved()**, *n_it* to assign number of iterations in the MCMC proces
 
 ```r
 ## This is the example for GPSC6, run this section for other GPSCs
+
 gpsc6_gubbin_tree_plot = plt_gubbin_tree(gpsc6_gubbin_tree)
 gpsc6_time_tree_list = match_tree_meta(metadata, gpsc6_gubbin_tree, "GPSC6_reference", drop_tip = TRUE)
 gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "bd_res_GPSC6", n_it = 3000, branch_model="mixedgamma")
@@ -123,6 +125,7 @@ plot(multitrees, cex=0.3, no.margin = TRUE)
 lanes <- multitrees$tip.label
 
 ## subset only those present in the trees
+
 selected_gpsc_metadata = subset(metadata, metadata$lane_id %in% lanes)
 lanes_gpsc <- subset(lanes, lanes  %in% selected_gpsc_metadata$lane_id)
 multitrees_overall <- keep.tip(multitrees, lanes_gpsc)
@@ -172,6 +175,7 @@ colnames(gpsc6_divtime_distance) <- c("divtime", "distance")
 ## Distance vs. Divergence time with confidence interval by sampling the posterior bactdating trees
 
 ### Procedures:
+#### Dtime_Dist_CI_posterior_tree()
 Take each GPSC  
 1. Sample the posterior bactdating trees (we want to sample posterior trees sequentially through the MCMC trace)  
 2. Reconstruct the sampled posterior trees  
@@ -179,7 +183,7 @@ Take each GPSC
 4. Identify pairs within evolutionary divergence time  
 5. Sample pairs with replacement (bootstrap)  
 6. Extract spatial distance per evolutionary window  
-7. Calculate mean spatial  per evolutionary window
+7. Calculate mean spatial per evolutionary window
 
 ### Run Dtime_Dist_CI_posterior_tree for each GPSC
 **Inputs:**   
