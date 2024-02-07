@@ -14,8 +14,8 @@ RR_matrix(
   ref_divtime_max = 150,
   des_distance_min = 0,
   des_distance_max = 50,
-  ref_distance_min = 150,
-  ref_distance_max = 200
+  ref_distance_min = 200,
+  ref_distance_max = 300
 )
 }
 \arguments{

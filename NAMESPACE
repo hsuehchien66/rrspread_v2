@@ -2,8 +2,11 @@
 
 export(Geo_Strain_Calc_RR)
 export(PltRR)
+export(PltRR_rolling)
+export(PltRR_rolling_divtime)
 export(RR_bootstrap)
 export(RR_matrix)
+export(RR_matrix_notree)
 export(bind_multitree)
 export(gen_dist_mat)
 export(gen_divtime_mat)

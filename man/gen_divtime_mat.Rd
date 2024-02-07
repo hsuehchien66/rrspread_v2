@@ -14,8 +14,6 @@ gen_divtime_mat(metadata, bactdate_tree, min_time, max_time)
 \item{min_time}{minimum divergence time threshold}
 
 \item{max_time}{maximum divergence time threshold}
-
-\item{coltime_range}{}
 }
 \value{
 (1) a pairwise numeric divergence time matrix, and (2) a pairwise binary divergence time matrix

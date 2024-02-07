@@ -7,4 +7,4 @@ Authors@R:
 Description: Quantify Relative Risk of Spread of pathogen. 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3.9000
+RoxygenNote: 7.3.1

@@ -8,7 +8,9 @@ time_resolved(
   match_tree_meta,
   dropRef_tree,
   save_bd_path,
-  time = "Year_collection"
+  time = "Year_collection",
+  n_it = 50000,
+  branch_model = "arc"
 )
 }
 \arguments{
