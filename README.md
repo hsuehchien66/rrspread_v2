@@ -53,7 +53,7 @@ Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 
 Please find the Rmarkdown file here:
 
-![](scripts/RRspread_toy_example.Rmd)<!-- -->
+<https://github.com/hsuehchien66/rrspread_v2/blob/main/scripts/RRspread_toy_example.Rmd>
 
 ## Load libraries
 
