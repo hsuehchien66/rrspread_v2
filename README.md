@@ -310,6 +310,8 @@ rolling_distance_RR_plot_50km <- ggplot(dist_district_lineage_rr_table, aes(x=di
 
 rolling_distance_RR_plot_50km
 ```
+![RR vs. Rolling Distance | at Lineage level](https://github.com/hsuehchien66/rrspread_v2/blob/main/figures/rolling_distance_RR_allref_main.png)
+
 
 ## Rolling divergence vs. relative ratio | Within district vs. Between districts
 
@@ -363,6 +365,7 @@ rolling_distance_divtime <- PltRR_rolling_divtime(res_df_divtime,"rolling diverg
   ggtitle("By District")+
   theme(axis.text = element_text(size=18),title = element_text(size=20))
 ```
+![RR vs. Rolling Divergence | By District](https://github.com/hsuehchien66/rrspread_v2/blob/main/figures/rolling_distance_divtime_district.png)
 
 ## Rolling divergence vs. relative ratio | Close area (0-30 km) vs. Distant area
 
@@ -421,5 +424,6 @@ rolling_distance_divtime_30km_150kmRef <- PltRR_rolling_divtime(res_df,"rolling 
   ggtitle("By Distance")+
   theme(axis.text = element_text(size=18),title = element_text(size=20))
 ```
+![RR vs. Rolling Divergence | By Distance](https://github.com/hsuehchien66/rrspread_v2/blob/main/figures/rolling_divtime_30km_150kmRef.png)
 
 
