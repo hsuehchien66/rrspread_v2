@@ -51,7 +51,9 @@ Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 
 ------------------------------------------------------------------------
 
-# Example Script on Israel Pneumococcal Dataset
+Please find the Rmarkdown file here:
+
+![](scripts/RRspread_toy_example.Rmd)<!-- -->
 
 ## Load libraries
 
