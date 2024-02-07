@@ -50,6 +50,7 @@ devtools::install_github("hsuehchien66/rrspread_v2")
 Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 
 ------------------------------------------------------------------------
+# Example script on Israel Pneumococcal Dataset:
 
 Please find the Rmarkdown file here: [RRspread_toy_example](https://github.com/hsuehchien66/rrspread_v2/blob/main/scripts/RRspread_toy_example.Rmd)
 
