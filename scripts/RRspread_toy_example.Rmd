@@ -6,14 +6,19 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE, warning = FALSE, message = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 **This is the markdown file for generate results for Israel relative risk of spread manuscript**
 
+### Install RRspread package from github
+```{r, warning=FALSE, message=FALSE}
+devtools::install_github("hsuehchien66/rrspread_v2")
+```
+
 ### Load libraries
 
-```{r, include=FALSE}
+```{r, warning = FALSE, message = FALSE}
 library(ape)
 library(BactDating)
 library(dplyr)
@@ -22,50 +27,6 @@ library(ggplot2)
 library(data.table)
 library(cowplot)
 library(rrspread)
-
-RR_matrix_notree = function(meta_table, coltime_range = 1,
-                     des_distance_min = 0, des_distance_max = 50, ref_distance_min = 200, ref_distance_max = 300){
-  lane.names <- meta_table$lane_id
-
-  vector_lineage = meta_table$GPSC_PoPUNK2
-  vector_location = meta_table$REGION
-  vector_longitude <- meta_table$Longitude
-  vector_latitude <- meta_table$Latitude
-  vector_coltime = meta_table$Year_collection
-  vector_coltime = vector_coltime + runif(length(vector_coltime), min = -0.01, max = 0.01)
-
-  des_lineage_mat = abs(outer(vector_lineage, vector_lineage, "=="))
-  diag(des_lineage_mat) <- NA
-  colnames(des_lineage_mat) = lane.names
-  rownames(des_lineage_mat) = lane.names
-  ref_lineage_mat = 1- des_lineage_mat
-
-  des_location_mat = abs(outer(vector_location, vector_location, "=="))
-  diag(des_location_mat) <- NA
-  colnames(des_location_mat) = lane.names
-  rownames(des_location_mat) = lane.names
-  ref_location_mat = 1 - des_location_mat
-
-  coltime_mat = abs(outer(vector_coltime, vector_coltime, "-"))
-  diag(coltime_mat) <- NA
-  colnames(coltime_mat) = lane.names
-  rownames(coltime_mat) = lane.names
-  coltime_mat = (coltime_mat > 0)*(coltime_mat <= coltime_range) ## within a year
-
-  des_distance_mat = gen_dist_mat(metadata = meta_table, min_dist = des_distance_min, max_dist = des_distance_max)
-  ref_distance_mat = gen_dist_mat(metadata = meta_table, min_dist = ref_distance_min, max_dist = ref_distance_max)
-
-  res_list = list("des_lineage_mat" = des_lineage_mat,
-                  "ref_lineage_mat" = ref_lineage_mat,
-                  "des_location_mat" = des_location_mat,
-                  "ref_location_mat" = ref_location_mat,
-                  "des_distance_mat" = des_distance_mat$distance_RRmatrix,
-                  "ref_distance_mat" = ref_distance_mat$distance_RRmatrix,
-                  "distance_num_mat" = ref_distance_mat$pairwise_distance_matrix,
-                  "coltime_mat" = coltime_mat)
-  return(res_list)
-}
-
 ```
 
 
@@ -98,27 +59,35 @@ gpsc10_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/
   gpsc10_gubbin_tree = read.tree(gpsc10_gubbin_tree_path)
 ```
 
-### Run bactdating (time-consuming)
+### Run BactDating (time-consuming)
 
-**Input:** 1. Gubbins (recombination-corrected tree), 2. metadata with collection time   
-**Output:** 1. bactdating results 2. root-to-tip distance vs. collection time   
-**notes:**   
-*drop_tip= TRUE* to make sure reference genome is not included in the analysis, *branch_model* can be assigned for evolutionary rates of branches, *n_it* to assign number of iterations in the MCMC process
+**Input:**   
+1. Gubbins (recombination-corrected tree),   
+2. metadata with collection time   
+**Output:**   
+1. bactdating results   
+2. root-to-tip distance vs. collection time   
+**Notes:**   
+In **match_tree_meta()**, *drop_tip= TRUE* to make sure reference genome is not included in the analysis,     
+In **time_resolved()**, *branch_model* can be assigned for evolutionary rates of branches,   
+In **time_resolved()**, *n_it* to assign number of iterations in the MCMC process
 
-```{r, include=FALSE}
+```{r, warning = FALSE, message = FALSE, results='hide'}
 gpsc6_gubbin_tree_plot = plt_gubbin_tree(gpsc6_gubbin_tree)
 gpsc6_time_tree_list = match_tree_meta(metadata, gpsc6_gubbin_tree, "GPSC6_reference", drop_tip = TRUE)
 gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC6", n_it = 3000, branch_model="mixedgamma")
 
-
-
 ### or Load previous bactdating results
 load(file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bdtree_mixgamma.RData")
 ```
+```{r}
+gpsc6_bd_res
+```
+
 
 #### Checked convergence of MCMC
 
-**notes:** 3 parameters (mu, sigma, alpha) should get converged and have enough sample size throughout MCMC. Each parameter should have sample size \> 100
+**Notes:** 3 parameters (mu, sigma, alpha) should get converged and have enough sample size throughout MCMC. Each parameter should have sample size \> 100
 
 
 ```{r}
@@ -129,7 +98,7 @@ coda::effectiveSize(mcmc_gpsc6)
 
 ### Bind trees and combine trees with metadata
 
-match the laneid in the tips of the trees and the laneid in the metadata
+Match the laneid in the tips of the trees and the laneid in the metadata
 
 ```{r}
 gpsc08_bd_tree = gpsc8_bd_res$BactDating$tree
@@ -169,8 +138,11 @@ gpsc55_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPU
 
 ### Generate matrices for relative risk calculations for each GPSC
 
-**input:** 1. Metadata, 2. Bactdating results  
-**output:** 11 matrices for following relative risk calculations
+**Input:**   
+1. Metadata,   
+2. Bactdating results  
+**Output:**  
+11 matrices for following relative risk calculations
 
 ```{r}
 gpsc6_rrmatrix <- RR_matrix(meta_table = gpsc6_metadata, bactdate_tree = gpsc6_bd_res$BactDating$tree, ref_distance_min = 0)
@@ -220,106 +192,29 @@ plot(gpsc_all_divtime_distance$divtime, gpsc_all_divtime_distance$distance)
 
 ### Distance vs. Divergence time with confidence interval by sampling the posterior bactdating trees
 
-#### procedures:
-Take each GPSC
-1. Sample the posterior bactdating trees (we want to sample posterior trees sequentially through the MCMC trace)
-2. Reconstruct the sampled posterior trees
-3. Calculate mean pairwise evolutionary divergence time from all the sampled trees
-4. Identify pairs within evolutionary divergence time
-5. Sample pairs with replacement (bootstrap)
-6. Extract spatial distance per evolutionary window
+#### Procedures:
+Take each GPSC  
+1. Sample the posterior bactdating trees (we want to sample posterior trees sequentially through the MCMC trace)  
+2. Reconstruct the sampled posterior trees  
+3. Calculate mean pairwise evolutionary divergence time from all the sampled trees  
+4. Identify pairs within evolutionary divergence time  
+5. Sample pairs with replacement (bootstrap)  
+6. Extract spatial distance per evolutionary window  
 7. Calculate mean spatial  per evolutionary window
 
-**Inputs:** 1. metadata, 2. bactdating results
+#### Run Dtime_Dist_CI_posterior_tree for each GPSC
+**Inputs:**   
+1. Metadata,  
+2. BactDating results
 ```{r}
-Dtime_Dist_CI_posterior_tree <- function(metadata, bd_res, initial_window=5, Ntreestosample=100, divtime_nboot=20, upper_window=50)
-{
-  ################################################################
-  ## Sample trees from BactDating posterior
-  ## Noemie Lefrancq
-  ## Last update 21/09/2023
-  ################################################################
-  
-  ## Load Bactdating result
-  
-  #resbd <- readRDS('bd_GPSC8')
-  Ntips = length(bd_res$BactDating$tree$tip.label)
-  Ntreestosample = 100
-  ## ID of tree to sample
-  tree_ID = round(seq(1, nrow(bd_res$BactDating$record), length.out = Ntreestosample))
-  ################################################################
-  ## Reconstruct one tree from the trace
-  ################################################################
-  ## Withdraw node heights
-  
-  posterior_sampling <- array(NA, dim=c(Ntips, Ntips, Ntreestosample))
-  for(samp in 1:Ntreestosample){
-    tip_dates = bd_res$BactDating$record[tree_ID[samp],1:Ntips]
-    node_dates = bd_res$BactDating$record[tree_ID[samp],(Ntips+1):(2*Ntips-1)]
-    tipandnodes_dates = c(tip_dates, node_dates)
-    
-    ## Take BD final tree for template
-    reconstructed_tree = bd_res$BactDating$tree
-    ## Replace edge lengths, based on the tip and node dates that were extracted above
-    reconstructed_tree$edge.length = tipandnodes_dates[reconstructed_tree$edge[,2]] - tipandnodes_dates[reconstructed_tree$edge[,1]]
-    ## pairwise distance
-    reconstructed_pairwise_dist = cophenetic.phylo(reconstructed_tree)
-    posterior_sampling[,,samp] <- reconstructed_pairwise_dist
-  }
-  
-  for (i in 1:Ntips) {
-    gpsc_divtime_posterior_mean <- apply(posterior_sampling, c(1,2), FUN=function(isamp) mean(isamp))
-    gpsc_divtime_posterior_upperci <- apply(posterior_sampling, c(1,2), FUN = function(isamp) quantile(isamp, probs = 0.975, na.rm = T))
-    gpsc_divtime_posterior_lowerci <- apply(posterior_sampling, c(1,2), FUN = function(isamp) quantile(isamp, probs = 0.075, na.rm = T))
-  }
-  
-  gpsc_rrmatrix <- RR_matrix(meta_table = metadata, bactdate_tree = bd_res$BactDating$tree)
-  gpsc_distance_dist <- as.data.frame(to.upper(gpsc_rrmatrix$distance_num_mat))
-  gpsc_divtime_dist <- as.data.frame(to.upper(gpsc_divtime_posterior_mean))
-  gpsc_dist_divtime_boot <- cbind(gpsc_distance_dist, gpsc_divtime_dist)
-  colnames(gpsc_dist_divtime_boot) <- c("distance", "divtime")
-  
-  nboot = divtime_nboot
-  x_divtime_max = seq(from=initial_window, to=upper_window, by=1)
-  x_divtime_min = rep(0, length(x_divtime_max))
-  #x_divtime_min = seq(from=0, to=20, by=1)
-  
-  boot_select <- data.frame()
-  for (win in 1:length(x_divtime_max)) {
-    boot.mean <- c()
-    for (n in 1:nboot) {
-      a = which(gpsc_dist_divtime_boot$divtime > x_divtime_min[win] &
-                  gpsc_dist_divtime_boot$divtime < x_divtime_max[win])        #select a certain region (index)
-      if (length(a)!=0){
-        b = sample(x=a, size=100, replace = T)  #subsample with replacement
-        resample.mean <- mean(gpsc_dist_divtime_boot[b, ]$distance)
-        boot.mean <- c(boot.mean, resample.mean)
-      }
-    }
-    distance.med <- quantile(boot.mean, probs = c(0.5), na.rm=T) #calculate confidence interval
-    distance.mean <- mean(boot.mean)
-    distance.upperci <- quantile(boot.mean, probs = c(0.975), na.rm=T)
-    distance.lowerci <- quantile(boot.mean, probs = c(0.025), na.rm=T)
-    mid_win <- mean(c(x_divtime_min[win], x_divtime_max[win]))
-    window_divtime_distance <- cbind(x_divtime_min[win], x_divtime_max[win], mid_win, distance.med, distance.mean, distance.upperci, distance.lowerci)
-    boot_select <- rbind(boot_select, window_divtime_distance)
-  }
-  
-  res_bootstrap_divtime_dist = list("window_divtime_dist" = boot_select, "divtime_dist_table" = gpsc_dist_divtime_boot)
-  return(res_bootstrap_divtime_dist)
-}
-```
-
-#### run Dtime_Dist_CI_posterior_tree for each GPSC
-````{r}
 gpsc6_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc6_metadata, gpsc6_bd_res)
 #gpsc8_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc8_metadata, gpsc8_bd_res)
 #gpsc10_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc10_metadata, gpsc10_bd_res)
 #gpsc47_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc47_metadata, gpsc47_bd_res, initial_window=10)
 #gpsc55_Dtime_Dist_CI_posterior_tree <- Dtime_Dist_CI_posterior_tree(gpsc55_metadata, gpsc55_bd_res)
-````
+```
 
-#### plot Distance CI vs. Divergence (GPSC6)
+#### Plot Distance CI vs. Divergence (GPSC6)
 ```{r}
 gpsc6_dist_div <- ggplot(gpsc6_Dtime_Dist_CI_posterior_tree$window_divtime_dist, aes(x=mid_win, y=distance.mean, ymin=distance.lowerci, ymax=distance.upperci))+
   geom_line()+
@@ -334,8 +229,8 @@ gpsc6_dist_div
 
 ```
 
-### Relative risk of Spread: lineage v.s. district
-```{r message=FALSE, include=FALSE, warning=FALSE, paged.print=FALSE}
+### Relative risk of Spread: Lineage v.s. District
+```{r message=FALSE, warning=FALSE, results='hide'}
 rr_lineage_location_mat = RR_matrix(selected_gpsc_metadata, multitrees)
 
 colyear_mat_ones = matrix(1, nrow=dim(selected_gpsc_metadata)[1], ncol=dim(selected_gpsc_metadata)[1])  ## don't select by collection year
@@ -345,6 +240,7 @@ rr = RR_bootstrap(metadataset = selected_gpsc_metadata,
                   des_strain_matrix = rr_lineage_location_mat$des_lineage_mat,
                   ref_strain_matrix = rr_lineage_location_mat$ref_lineage_mat,
                   colyear_mat_ones, nboot = 100, subsample_min = 70)
+
 ## load library: ggplot2
 district_lineage_rr = PltRR(rr, "Within District Relative Ratio", "District")
 
@@ -359,19 +255,19 @@ rr = RR_bootstrap(metadataset = metadata,
                   ref_strain_matrix = lineage_matrix$ref_lineage_mat,
                   colyear_mat_ones, nboot = 100, subsample_min = 70)
 
-## load library: ggplot2
 district_lineage_rr = PltRR(rr, "Within District Relative Ratio", "District")
-district_lineage_rr
 ```
+
 ```{r}
 district_lineage_rr
 ```
 
 
-### Relative risk of Spread: lineage v.s. spatial distance
-rolling window from 0-30 to 120-150 km 
 
-```{r message=FALSE, include=FALSE, warning=FALSE, paged.print=FALSE}
+### Relative risk of Spread: Lineage v.s. Physical Distance
+Rolling window from 0-30 to 120-150 km 
+
+```{r, message=FALSE, warning=FALSE, results='hide', fig.show='hide'}
 des_distance_min1 = c(0,1)
 des_distance_min2 = seq(from=5, to=25, by=5)
 des_distance_min3 = seq(from=30, to=90, by=10)
@@ -421,7 +317,7 @@ for(distances in 1:des_distance_range){
 ```
 
 
-### Figure 2: Combine plots 1. lineage vs. district & plot 2. lineage vs. spatial distance
+### Figure 2: Combine Plots 1. [Lineage vs. District] & Plot 2. [Lineage vs. Physical Distance] 
 ```{r}
 dist_district_lineage_rr_table <- rbind(res_df, rr, fill=TRUE)
 for(i in 1:nrow(dist_district_lineage_rr_table)){
@@ -451,9 +347,9 @@ rolling_distance_RR_plot_50km
 ```
 
 
-### Rolling divergence vs. relative ratio | within district vs. between district
+### Rolling divergence vs. relative ratio | Within district vs. Between districts
 
-```{r, include=FALSE}
+```{r, results='hide', fig.show='hide'}
 des_divtime_min1 = seq(from=0, to=8, by=2)
 des_divtime_min2 = seq(from=10, to=15, by=5)
 des_divtime_min = c(des_divtime_min1, des_divtime_min2, 20)
@@ -506,9 +402,14 @@ rolling_distance_divtime <- PltRR_rolling_divtime(res_df_divtime,"rolling diverg
   theme(axis.text = element_text(size=18),title = element_text(size=20))
 ```
 
-### Rolling divergence vs. relative ratio | close area (0-30 km) vs. distant area
+### Figure Rolling divergence vs. relative ratio | By District
+```{r}
+rolling_distance_divtime
+```
 
-```{r, include=FALSE}
+### Rolling divergence vs. relative ratio | Close area (0-30 km) vs. Distant area
+
+```{r, results='hide', fig.show='hide'}
 des_divtime_min1 = seq(from=0, to=8, by=2)
 des_divtime_min2 = seq(from=10, to=15, by=5)
 des_divtime_min = c(des_divtime_min1, des_divtime_min2, 20)
@@ -568,6 +469,12 @@ rolling_distance_divtime_30km_150kmRef <- PltRR_rolling_divtime(res_df,"rolling 
 #rolling_distance_divtime_30km_150kmRef
 #dev.off()
 ```
+
+### Figure: Rolling divergence vs. relative ratio | By Distance
+```{r}
+rolling_distance_divtime_30km_150kmRef
+```
+
 
 ### Figure 4: rolling divergence vs. relative risk ratio
 
