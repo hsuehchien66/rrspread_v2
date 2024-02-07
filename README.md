@@ -3,6 +3,10 @@ RRspread: Quantifying Spread of Bacteria Using Relative Risk Ratio Framework
 
 Last update: 7 February 2024
 
+# Install RRspread package from github
+```r
+devtools::install_github("hsuehchien66/rrspread_v2")
+```
 
 # Required Input Data:
 
@@ -32,7 +36,7 @@ Last update: 7 February 2024
 
 ------------------------------------------------------------------------
 
-## Workflow:
+# Workflow:
 
 1.  using *Match_tree_meta* to generate a table that match the metadata and tree file
 2.  using *Time_resolved* to generate bactdating results, including pairwise divergence time between samples in each GPSC
@@ -49,10 +53,6 @@ Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 
 # Example Script on Israel Pneumococcal Dataset
 
-## Install RRspread package from github
-```r
-devtools::install_github("hsuehchien66/rrspread_v2")
-```
 
 
 
