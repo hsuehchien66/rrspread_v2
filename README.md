@@ -53,6 +53,7 @@ Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 # Example script on Israel Pneumococcal Dataset:
 
 Please find the Rmarkdown file here: [RRspread_toy_example](https://github.com/hsuehchien66/rrspread_v2/blob/main/scripts/RRspread_toy_example.Rmd)
+Please find the example dataset here: [RRspread_example_dataset](https://figshare.com/articles/dataset/Input_files_for_RRspread_on_Israel_Pneumococcal_Dataset/25180613)
 
 ## Load libraries
 
