@@ -53,6 +53,39 @@ Reference: <https://xavierdidelot.github.io/BactDating/articles/yourData.html>
 
 # Example Script on Israel Pneumococcal Dataset
 
+## Load libraries
+
+```r
+library(ape)
+library(BactDating)
+library(dplyr)
+library(geosphere)
+library(ggplot2)
+library(data.table)
+library(cowplot)
+library(rrspread)
+```
+
+## Load input data
+```r
+metadata_file_path = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/input/Israel_1174isolates_metadata_input.txt"
+metadata = read.csv(metadata_file_path, sep="\t")
+metadata = metadata[, c("lane_id", "GPSC_PoPUNK2", "REGION", "Longitude", "Latitude", "Year_collection")]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
