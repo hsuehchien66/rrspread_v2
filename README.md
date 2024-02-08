@@ -92,9 +92,11 @@ gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
 **Input:**   
 1. Gubbins (recombination-corrected tree),   
 2. metadata with collection time  
+
 **Output:**   
 1. bactdating results   
 2. root-to-tip distance vs. collection time   
+
 **Notes:**   
 In **match_tree_meta()**, *drop_tip= TRUE* to make sure reference genome is not included in the analysis,     
 In **time_resolved()**, *branch_model* can be assigned for evolutionary rates of branches,   
@@ -152,6 +154,7 @@ gpsc55_metadata <- selected_gpsc_metadata[which(selected_gpsc_metadata$GPSC_PoPU
 **Input:**   
 1. Metadata,   
 2. Bactdating results  
+
 **Output:**  
 11 matrices for following relative risk calculations
 
