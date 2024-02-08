@@ -48,8 +48,8 @@ devtools::install_github("hsuehchien66/rrspread_v2")
 8.  rolling distance v.s. relative ratio (fixed divergence time)
 
 Reference:   
-[Didelot et al (2018). Bayesian inference of ancestral dates on bacterial phylogenetic trees. Nucleic Acids Research, 46:e134.](https://doi.org/10.1093/nar/gky783)  
-[Belman S et al (2023). Geographic migration and vaccine-induced fitness changes of Streptococcus pneumoniae. bioRxiv](https://pubmed.ncbi.nlm.nih.gov/36711799/)
+ - [Didelot et al (2018). Bayesian inference of ancestral dates on bacterial phylogenetic trees. Nucleic Acids Research, 46:e134.](https://doi.org/10.1093/nar/gky783)  
+ - [Belman S et al (2023). Geographic migration and vaccine-induced fitness changes of Streptococcus pneumoniae. bioRxiv](https://pubmed.ncbi.nlm.nih.gov/36711799/)
 
 
 ------------------------------------------------------------------------
