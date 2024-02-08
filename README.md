@@ -13,10 +13,10 @@ devtools::install_github("hsuehchien66/rrspread_v2")
 1. Tree file(s) generated from Gubbins (Recombination-corrected)
 2. Metadata including following columns:
   - GPSC_PoPUNK2 (Strain)
-  - Region (Categorical geo-information)
+  - REGION (Categorical geo-information)
   - Longitude
   - Latitude
-  - Year_ollection
+  - Year_collection
   
 ------------------------------------------------------------------------
 
