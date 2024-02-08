@@ -91,7 +91,7 @@ gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
 
 **Input:**   
 1. Gubbins (recombination-corrected tree),   
-2. metadata with collection time   
+2. metadata with collection time  
 **Output:**   
 1. bactdating results   
 2. root-to-tip distance vs. collection time   
