@@ -296,7 +296,7 @@ for(distances in 1:des_distance_range){
 
 ```
 
-## Figure 2: Combine Plot 1. [Lineage vs. District] & Plot 2. [Lineage vs. Physical Distance] 
+## At lineage level,  [Lineage vs. District] & [Lineage vs. Physical Distance] 
 ```r
 dist_district_lineage_rr_table <- rbind(res_df, rr, fill=TRUE)
 for(i in 1:nrow(dist_district_lineage_rr_table)){
