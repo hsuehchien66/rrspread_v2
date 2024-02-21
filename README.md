@@ -1,7 +1,7 @@
 RRspread: Quantifying Spread of Bacteria Using Relative Risk Ratio Framework
 ================
 
-Last update: 7 February 2024
+Last update: 20 February 2024
 
 # Install RRspread package from github
 ```r
