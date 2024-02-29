@@ -246,7 +246,7 @@ Geo_Strain_Calc_RR <- function(x, des_geo_matrix, ref_geo_matrix, des_strain_mat
     rr = ((a+1)/(b+1))/((c+1)/(d+1))
   }
   if (is.na(rr) == T | rr[1]==0){
-    rr = ((a+1)/b)/(c/d)
+    rr = ((a+1)/b+1)/(c+1/d+1)
   }
   return(rr)
 }
