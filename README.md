@@ -110,7 +110,7 @@ In **time_resolved()**, *n_it* to assign number of iterations in the MCMC proces
 
 gpsc6_gubbin_tree_plot = plt_gubbin_tree(gpsc6_gubbin_tree)
 gpsc6_time_tree_list = match_tree_meta(metadata, gpsc6_gubbin_tree, "GPSC6_reference", drop_tip = TRUE)
-gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "bd_res_GPSC6", n_it = 3000, branch_model="mixedgamma")
+gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "bd_res_GPSC6", n_it = 3000, branch_model="arc")
 
 ```
 
