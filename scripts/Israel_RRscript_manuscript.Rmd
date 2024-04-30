@@ -31,12 +31,16 @@ library(rrspread)
 check [github](https://github.com/hsuehchien66/rrspread) for metadata format
 
 ```{r}
-metadata_file_path = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/Israel_GPSC_city_region.csv"
+#metadata_file_path = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/Israel_GPSC_city_region.csv"
+
+base_path <- getwd()
+metadata_file = "Israel_GPSC_city_region.csv"
 metadata = read.csv(metadata_file_path)
+
 ### generate lane_id files for all 1,174 isolates
 lane_id_1174 = metadata[,"lane_id"]
 write.table(lane_id_1174, "Israel_1174_isolates_laneid.txt", row.names = F, col.names = F, quote = F)
-## fixed metadata REGION information
+## fixed metadata REGION information by considering hospital information
 noregion <- metadata[which(metadata$REGION==""),]
 metadata[c(202,308), "REGION"] = "South District"
 metadata[c(356,413,692,908), "REGION"] = "Jerusalem District"
@@ -44,7 +48,12 @@ metadata[c(382,383,418,570,609, 435, 694, 929), "REGION"] = "Center District"
 metadata[613, "REGION"] = "Tel Aviv District"
 region_count <- as.data.frame(table(metadata$REGION))
 colnames(region_count) <- c("District", "Count")
-write.table(metadata, file = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/input/Israel_1174isolates_metadata_input.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+#write.table(metadata, file = "/Users/hc14/Documents/SpneumoIsrael/Israel_raw_data/input/Israel_1174isolates_metadata_input.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+output_path <- file.path(base_path, "Israel_1174isolates_metadata_input.txt")
+write.table(metadata, file = output_path, sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+
+#write.table(region_count, file = "Israel_region_count.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
+output_path <- file.path(base_path, "Israel_region_count.txt")
 write.table(region_count, file = "Israel_region_count.txt", sep="\t", quote=FALSE, row.names = FALSE, col.names = TRUE)
 ```
 
@@ -53,20 +62,26 @@ write.table(region_count, file = "Israel_region_count.txt", sep="\t", quote=FALS
 The tree should be recombination-corrected by Gubbins GPSC6,8,10,47,55 are selected for Israel migration analysis
 
 ```{r}
-gpsc8_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC8_reference_bwa.final_tree.tre"
-  gpsc8_gubbin_tree = read.tree(gpsc8_gubbin_tree_path)
+#gpsc8_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC8_reference_bwa.final_tree.tre"
+gubbin_base_path = getwd()
+gpsc8_gubbin_tree_path = "GPSC8_reference_bwa.final_tree.tre"
+gpsc8_gubbin_tree = read.tree(gpsc8_gubbin_tree_path)
 
-gpsc55_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC55_reference_bwa.final_tree.tre"
-  gpsc55_gubbin_tree = read.tree(gpsc55_gubbin_tree_path)
+#gpsc55_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC55_reference_bwa.final_tree.tre"
+gpsc55_gubbin_tree_path = "GPSC55_reference_bwa.final_tree.tre"
+gpsc55_gubbin_tree = read.tree(gpsc55_gubbin_tree_path)
 
-gpsc47_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC47_reference_bwa.final_tree.tre"
-  gpsc47_gubbin_tree = read.tree(gpsc47_gubbin_tree_path)
+#gpsc47_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC47_reference_bwa.final_tree.tre"
+gpsc47_gubbin_tree_path = "GPSC47_reference_bwa.final_tree.tre"
+gpsc47_gubbin_tree = read.tree(gpsc47_gubbin_tree_path)
 
-gpsc6_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC6_reference_bwa.final_tree.tre"
-  gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
+#gpsc6_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC6_reference_bwa.final_tree.tre"
+gpsc6_gubbin_tree_path = "GPSC6_reference_bwa.final_tree.tre"
+gpsc6_gubbin_tree = read.tree(gpsc6_gubbin_tree_path)
 
-gpsc10_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC10_reference_bwa.final_tree.tre"
-  gpsc10_gubbin_tree = read.tree(gpsc10_gubbin_tree_path)
+#gpsc10_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/05_topGPSC_gubbin_output_tree/GPSC10_reference_bwa.final_tree.tre"
+gpsc10_gubbin_tree_path = "GPSC10_reference_bwa.final_tree.tre"
+gpsc10_gubbin_tree = read.tree(gpsc10_gubbin_tree_path)
 ```
 
 ### Run bactdating
@@ -76,26 +91,56 @@ gpsc10_gubbin_tree_path = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/
 ```{r}
 gpsc8_gubbin_tree_plot = plt_gubbin_tree(gpsc8_gubbin_tree)
 gpsc8_time_tree_list = match_tree_meta(metadata, gpsc8_gubbin_tree, "GPSC8_reference", drop_tip = TRUE)
-gpsc8_bd_res = time_resolved(gpsc8_time_tree_list$match_tree_meta, gpsc8_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC8", time="Year_collection", n_it = 3000, branch_model="mixedgamma")
+#gpsc8_bd_res = time_resolved(gpsc8_time_tree_list$match_tree_meta, gpsc8_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC8", time="Year_collection", n_it = 3000, branch_model="arc")
+output_path <- file.path(base_path, "bd_res_GPSC8")
+gpsc8_bd_res = time_resolved(gpsc8_time_tree_list$match_tree_meta, 
+                             gpsc8_time_tree_list$tree, output_path, 
+                             time="Year_collection", 
+                             n_it = 3000, 
+                             branch_model="arc")
 
 gpsc55_gubbin_tree_plot = plt_gubbin_tree(gpsc55_gubbin_tree)
 gpsc55_time_tree_list = match_tree_meta(metadata, gpsc55_gubbin_tree, "GPSC55_reference", drop_tip = TRUE)
-gpsc55_bd_res = time_resolved(gpsc55_time_tree_list$match_tree_meta, gpsc55_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC55", n_it = 3000, branch_model="mixedgamma")
+#gpsc55_bd_res = time_resolved(gpsc55_time_tree_list$match_tree_meta, gpsc55_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC55", n_it = 3000, branch_model="arc")
+output_path <- file.path(base_path, "bd_res_GPSC55")
+gpsc55_bd_res = time_resolved(gpsc55_time_tree_list$match_tree_meta, 
+                              gpsc55_time_tree_list$tree, 
+                              output_path, 
+                              n_it = 3000, 
+                              branch_model="arc")
 
 gpsc47_gubbin_tree_plot = plt_gubbin_tree(gpsc47_gubbin_tree)
 gpsc47_time_tree_list = match_tree_meta(metadata, gpsc47_gubbin_tree, "GPSC47_reference", drop_tip = TRUE)
-gpsc47_bd_res = time_resolved(gpsc47_time_tree_list$match_tree_meta, gpsc47_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC47", n_it = 3000, branch_model="mixedgamma")
+#gpsc47_bd_res = time_resolved(gpsc47_time_tree_list$match_tree_meta, gpsc47_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC47", n_it = 3000, branch_model="arc")
+output_path <- file.path(base_path, "bd_res_GPSC47")
+gpsc47_bd_res = time_resolved(gpsc47_time_tree_list$match_tree_meta, 
+                              gpsc47_time_tree_list$tree, 
+                              output_path, 
+                              n_it = 3000, 
+                              branch_model="arc")
 
 gpsc6_gubbin_tree_plot = plt_gubbin_tree(gpsc6_gubbin_tree)
 gpsc6_time_tree_list = match_tree_meta(metadata, gpsc6_gubbin_tree, "GPSC6_reference", drop_tip = TRUE)
-gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC6", n_it = 3000, branch_model="mixedgamma")
+#gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, gpsc6_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC6", n_it = 3000, branch_model="arc")
+output_path <- file.path(base_path, "bd_res_GPSC6")
+gpsc6_bd_res = time_resolved(gpsc6_time_tree_list$match_tree_meta, 
+                             gpsc6_time_tree_list$tree, 
+                             output_path, 
+                             n_it = 3000, 
+                             branch_model="arc")
 
 gpsc10_gubbin_tree_plot = plt_gubbin_tree(gpsc10_gubbin_tree)
 gpsc10_time_tree_list = match_tree_meta(metadata, gpsc10_gubbin_tree, "GPSC10_reference", drop_tip = TRUE)
-gpsc10_bd_res = time_resolved(gpsc10_time_tree_list$match_tree_meta, gpsc10_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC10", n_it = 3000, branch_model="mixedgamma")
+#gpsc10_bd_res = time_resolved(gpsc10_time_tree_list$match_tree_meta, gpsc10_time_tree_list$tree, "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bd_res_GPSC10", n_it = 3000, branch_model="arc")
+output_path <- file.path(base_path, "bd_res_GPSC10")
+gpsc10_bd_res = time_resolved(gpsc10_time_tree_list$match_tree_meta, 
+                              gpsc10_time_tree_list$tree, 
+                              output_path, 
+                              n_it = 3000, 
+                              branch_model="arc")
 
 ### or Load previous bactdating results
-load(file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bdtree_mixgamma.RData")
+#load(file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/bdtree.RData")
 ```
 
 #### Checked convergence of MCMC
@@ -129,7 +174,9 @@ gpsc10_bd_tree = gpsc10_bd_res$BactDating$tree
 
 multitrees = bind_multitree(gpsc08_bd_tree, gpsc55_bd_tree, gpsc47_bd_tree, gpsc06_bd_tree, gpsc10_bd_tree)
 plot(multitrees, cex=0.3, no.margin = TRUE)
-write.tree(multitrees, file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/GPSC8_55_47_6_10_Israel.nwk")
+#write.tree(multitrees, file = "/Users/hc14/Documents/SpneumoIsrael/analysis_results/GPSC8_55_47_6_10_Israel.nwk")
+output_path <- file.path(base_path, "GPSC8_55_47_6_10_Israel.nwk")
+write.tree(multitrees, file = output_path)
 lanes <- multitrees$tip.label
 
 ## subset only those present in the trees
