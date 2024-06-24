@@ -1,7 +1,7 @@
 RRspread: Quantifying Spread of Bacteria Using Relative Risk Ratio Framework
 ================
 
-Last update: 20 February 2024
+Last update: 24 June 2024
 
 # Install RRspread package from github
 ```r
@@ -51,6 +51,11 @@ Reference:
  - [Didelot et al (2018). Bayesian inference of ancestral dates on bacterial phylogenetic trees. Nucleic Acids Research, 46:e134.](https://doi.org/10.1093/nar/gky783)  
  - [Belman S et al (2023). Geographic migration and vaccine-induced fitness changes of Streptococcus pneumoniae. bioRxiv](https://pubmed.ncbi.nlm.nih.gov/36711799/)
 
+------------------------------------------------------------------------
+# Citations:
+If you use this package, please cite:
+ - [Belman S et al (2023). Geographic migration and vaccine-induced fitness changes of Streptococcus pneumoniae. bioRxiv](https://pubmed.ncbi.nlm.nih.gov/36711799/)
+ - [Cheng H et al (2024). Estimating geographical spread of Streptococcus pneumoniae within Israel using genomic data](https://doi.org/10.1099/mgen.0.001262)
 
 ------------------------------------------------------------------------
 # Example script on Israel Pneumococcal Dataset:
